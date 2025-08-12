@@ -2,7 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0a0a0a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script>
@@ -138,13 +142,57 @@
             left: 0;
             right: 0;
             z-index: 1000;
-            padding: 15px 40px;
+            padding: 12px 5%;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: rgba(10, 10, 10, 0.9);
+            background: rgba(10, 10, 10, 0.95);
             backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        @media (max-width: 768px) {
+            .nav {
+                padding: 10px 4%;
+            }
+            
+            .nav-center {
+                display: none;
+            }
+            
+            .mobile-menu-btn {
+                display: block !important;
+                background: none;
+                border: none;
+                color: white;
+                font-size: 24px;
+                cursor: pointer;
+                padding: 5px;
+            }
+            
+            .mobile-menu {
+                display: none;
+                position: fixed;
+                top: 60px;
+                left: 0;
+                right: 0;
+                background: rgba(10, 10, 10, 0.98);
+                padding: 20px 5%;
+                z-index: 999;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            }
+            
+            .mobile-menu.active {
+                display: block;
+            }
+            
+            .mobile-menu .nav-link {
+                display: block;
+                padding: 12px 0;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            }
         }
 
         .logo {
@@ -159,8 +207,12 @@
 
         .nav-center {
             display: flex;
-            gap: 35px;
+            gap: 25px;
             align-items: center;
+        }
+        
+        .mobile-menu-btn {
+            display: none;
         }
 
         .nav-link {
@@ -256,9 +308,10 @@
         }
 
         .hero-content {
-            text-align: center;
-            max-width: 800px;
-            margin: 0 auto;
+            flex: 1;
+            max-width: 600px;
+            width: 50%;
+            z-index: 2;
         }
 
         .hero-title {
@@ -477,8 +530,23 @@
 
         /* Features Section */
         .features {
-            padding: 100px 20px;
+            padding: 80px 5%;
             background: rgba(255, 255, 255, 0.02);
+        }
+        
+        @media (max-width: 768px) {
+            .features {
+                padding: 60px 5%;
+            }
+            
+            .features-grid {
+                grid-template-columns: 1fr !important;
+                gap: 30px !important;
+            }
+            
+            .feature-card {
+                max-width: 100% !important;
+            }
         }
 
         .features-container {
@@ -496,9 +564,12 @@
 
         .features-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 40px;
-            margin-top: 60px;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            margin-top: 50px;
+            max-width: 1400px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         .feature-card {
@@ -1006,16 +1077,25 @@
     <nav class="nav">
         <a href="/" class="logo">🌤️ WeatherWise AI</a>
         <div class="nav-center">
-            <a href="#home" class="nav-link">Home</a>
-            <a href="/weather" class="nav-link">Forecast</a>
-            <a href="#features" class="nav-link">About</a>
-            <a href="#cities" class="nav-link">Contact</a>
+            <a href="#features" class="nav-link">Features</a>
+            <a href="#how-it-works" class="nav-link">How It Works</a>
+            <a href="#testimonials" class="nav-link">Testimonials</a>
+            <a href="#faq" class="nav-link">FAQ</a>
         </div>
+        <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
         <div class="nav-right">
-            <a href="#" class="auth-btn">Sign In</a>
-            <a href="#" class="signup-btn">Sign Up</a>
+            <button class="auth-btn" onclick="openLoginModal()">Sign In</button>
+            <button class="auth-btn-primary" onclick="openSignupModal()">Get Started</button>
         </div>
     </nav>
+    
+    <!-- Mobile Menu -->
+    <div class="mobile-menu" id="mobileMenu">
+        <a href="#features" class="nav-link" onclick="closeMobileMenu()">Features</a>
+        <a href="#how-it-works" class="nav-link" onclick="closeMobileMenu()">How It Works</a>
+        <a href="#testimonials" class="nav-link" onclick="closeMobileMenu()">Testimonials</a>
+        <a href="#faq" class="nav-link" onclick="closeMobileMenu()">FAQ</a>
+    </div>
 
     <!-- Hero Section -->
     <section class="hero" id="home">
