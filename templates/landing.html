@@ -300,18 +300,22 @@
         .hero-container {
             max-width: 1200px;
             width: 100%;
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 60px;
+            display: flex;
+            flex-direction: column;
             align-items: center;
+            text-align: center;
+            gap: 60px;
             z-index: 10;
         }
 
         .hero-content {
-            flex: 1;
-            max-width: 600px;
-            width: 50%;
+            max-width: 800px;
+            width: 100%;
+            margin: 0 auto;
             z-index: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
         .hero-title {
@@ -825,6 +829,91 @@
             color: rgba(255, 255, 255, 0.5);
         }
 
+        .auth-btn {
+            background: transparent;
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            padding: 10px 25px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            letter-spacing: 0.5px;
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        .auth-btn:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 0;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            transition: width 0.3s ease;
+            z-index: -1;
+        }
+
+        .auth-btn:hover:before {
+            width: 100%;
+        }
+
+        .auth-btn:hover {
+            transform: translateY(-2px);
+            border-color: rgba(255, 255, 255, 0.4);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .auth-btn:active {
+            transform: translateY(0);
+        }
+
+        .auth-btn-primary {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.35);
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+            letter-spacing: 0.5px;
+        }
+
+        .auth-btn-primary:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 0;
+            height: 100%;
+            background: linear-gradient(135deg, #4338ca 0%, #6d28d9 100%);
+            transition: width 0.3s ease;
+            z-index: -1;
+        }
+
+        .auth-btn-primary:hover:before {
+            width: 100%;
+        }
+
+        .auth-btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(79, 70, 229, 0.5);
+        }
+
+        .auth-btn-primary:active {
+            transform: translateY(0);
+            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.35);
+        }
+
         .auth-submit-btn {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -1075,7 +1164,7 @@
 <body>
     <!-- Enhanced Navigation -->
     <nav class="nav">
-        <a href="/" class="logo">🌤️ WeatherWise AI</a>
+        <a href="/" class="logo">🌤️ Skycast</a>
         <div class="nav-center">
             <a href="#features" class="nav-link">Features</a>
             <a href="#how-it-works" class="nav-link">How It Works</a>
@@ -1095,6 +1184,10 @@
         <a href="#how-it-works" class="nav-link" onclick="closeMobileMenu()">How It Works</a>
         <a href="#testimonials" class="nav-link" onclick="closeMobileMenu()">Testimonials</a>
         <a href="#faq" class="nav-link" onclick="closeMobileMenu()">FAQ</a>
+        <div class="mobile-auth-buttons">
+            <button class="auth-btn" onclick="openLoginModal(); closeMobileMenu();">Sign In</button>
+            <button class="auth-btn-primary" onclick="openSignupModal(); closeMobileMenu();">Get Started</button>
+        </div>
     </div>
 
     <!-- Hero Section -->
@@ -1311,7 +1404,7 @@
             <a href="/weather" class="footer-cta">Get Weather Forecast</a>
             
             <div class="footer-bottom">
-                <p>&copy; 2024 WeatherWise AI. Powered by advanced climate modeling.</p>
+                <p>&copy; 2024 Skycast. Powered by advanced climate modeling.</p>
             </div>
         </div>
     </footer>

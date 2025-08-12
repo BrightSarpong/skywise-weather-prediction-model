@@ -442,24 +442,7 @@
                                         <div class="detail-value" id="resultMaxTemp">--°C</div>
                                     </div>
                                 </div>
-                                <div class="detail-item">
-                                    <div class="detail-icon">
-                                        <i class="wi wi-barometer"></i>
-                                    </div>
-                                    <div class="detail-info">
-                                        <div class="detail-label">Pressure</div>
-                                        <div class="detail-value" id="resultPressure">-- hPa</div>
-                                    </div>
-                                </div>
-                                <div class="detail-item">
-                                    <div class="detail-icon">
-                                        <i class="wi wi-day-sunny"></i>
-                                    </div>
-                                    <div class="detail-info">
-                                        <div class="detail-label">Visibility</div>
-                                        <div class="detail-value" id="resultVisibility">-- km</div>
-                                    </div>
-                                </div>
+
                             </div>
                             
                             <div class="weather-actions" style="margin-top: 1.5rem; text-align: center;">
@@ -702,8 +685,6 @@
                 // Update additional metrics
                 document.getElementById('resultMinTemp').textContent = minTemp !== null ? `${minTemp}°C` : '--';
                 document.getElementById('resultMaxTemp').textContent = temp !== null ? `${temp}°C` : '--';
-                document.getElementById('resultPressure').textContent = '1013 hPa'; // Default pressure
-                document.getElementById('resultVisibility').textContent = '10 km'; // Default visibility
                 
                 // Update weather icon based on conditions
                 const icon = document.querySelector('.weather-icon i');
