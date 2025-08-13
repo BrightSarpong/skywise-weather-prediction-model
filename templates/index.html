@@ -119,6 +119,19 @@
                 padding: 0.8rem;
                 margin: 0.25rem 0;
             }
+            
+            .desktop-text {
+                display: none;
+            }
+            
+            .btn-outline {
+                padding: 0.75rem;
+            }
+            
+            #useLocationBtn {
+                min-width: 40px;
+                justify-content: center;
+            }
         }
 
         /* Header */
@@ -216,6 +229,57 @@
             -webkit-tap-highlight-color: transparent;
             position: relative;
             overflow: hidden;
+        }
+        
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+        }
+        
+        .btn-outline:hover {
+            background: rgba(99, 102, 241, 0.1);
+        }
+        
+        .location-chip {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 6px 14px;
+            font-size: 0.85rem;
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+        
+        .location-chip:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            transform: translateY(-1px);
+        }
+        
+        .location-chip:active {
+            transform: translateY(0);
+        }
+        
+        .popular-locations {
+            margin-top: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        @media (max-width: 480px) {
+            .location-chip {
+                padding: 5px 12px;
+                font-size: 0.8rem;
+            }
+            
+            .popular-locations {
+                gap: 6px;
+            }
         }
 
         .btn:active {
@@ -525,7 +589,21 @@
                 <form id="weatherForm">
                     <div class="form-group">
                         <label for="location" class="form-label">Location</label>
-                        <input type="text" id="location" class="form-control" placeholder="Enter city or town in Ghana" required>
+                        <div class="location-input-container" style="display: flex; gap: 10px;">
+                            <input type="text" id="location" class="form-control" placeholder="Enter city or town in Ghana" required style="flex: 1;">
+                            <button type="button" id="useLocationBtn" class="btn btn-outline" style="white-space: nowrap; display: flex; align-items: center; gap: 5px; background: rgba(255, 255, 255, 0.1); border: 1px solid var(--glass-border);">
+                                <i class="fas fa-location-arrow"></i>
+                                <span class="desktop-text">My Location</span>
+                            </button>
+                        </div>
+                        <div class="popular-locations" style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px;">
+                            <button type="button" class="location-chip" data-location="Accra">Accra</button>
+                            <button type="button" class="location-chip" data-location="Kumasi">Kumasi</button>
+                            <button type="button" class="location-chip" data-location="Tamale">Tamale</button>
+                            <button type="button" class="location-chip" data-location="Sekondi-Takoradi">Sekondi-Takoradi</button>
+                            <button type="button" class="location-chip" data-location="Cape Coast">Cape Coast</button>
+                            <button type="button" class="location-chip" data-location="Koforidua">Koforidua</button>
+                        </div>
                     </div>
                     
                     <div class="form-group">
@@ -653,12 +731,15 @@
         tomorrow.setDate(tomorrow.getDate() + 1);
         document.getElementById('date').valueAsDate = tomorrow;
             
-            // Form submission
+            // Handle form submission
             weatherForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
                 
-                const location = locationInput.value.trim();
+                const locationInput = document.getElementById('location');
+                const location = locationInput.value;
                 const date = document.getElementById('date').value;
+                const latitude = locationInput.dataset.latitude;
+                const longitude = locationInput.dataset.longitude;
                 
                 if (!location) {
                     showError('Please enter a location');
@@ -669,16 +750,25 @@
                 showLoading(true);
                 
                 try {
-                    // Make API call to Flask backend
-                    const formData = new FormData();
-                    formData.append('location', location);
-                    formData.append('predictionDate', date);
+                    // Prepare request data
+                    const requestData = {
+                        location: location,
+                        date: date
+                    };
                     
-                    console.log('Sending request to /predict with:', { location, date });
+                    // Add coordinates if available
+                    if (latitude && longitude) {
+                        requestData.latitude = latitude;
+                        requestData.longitude = longitude;
+                    }
                     
+                    // Call your API endpoint
                     const response = await fetch('/predict', {
                         method: 'POST',
-                        body: formData
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(requestData)
                     });
                     
                     if (!response.ok) {
@@ -758,6 +848,111 @@
             // This is a placeholder - in a real app, you would save this to local storage or a backend
             showError('Save location feature coming soon!');
         });
+        
+        // Add click handlers for location chips
+        document.querySelectorAll('.location-chip').forEach(chip => {
+            chip.addEventListener('click', function() {
+                const location = this.getAttribute('data-location');
+                const locationInput = document.getElementById('location');
+                locationInput.value = location;
+                
+                // Clear any stored coordinates when selecting from popular locations
+                delete locationInput.dataset.latitude;
+                delete locationInput.dataset.longitude;
+                
+                // Show success message
+                showError(`Selected ${location}. Now choose a date and click "Get Weather Prediction"`);
+                
+                // Focus the date field for better UX
+                document.getElementById('date').focus();
+            });
+        });
+        
+        // Get location button click handler
+        const useLocationBtn = document.getElementById('useLocationBtn');
+        useLocationBtn.addEventListener('click', getCurrentLocation);
+        
+        // Get current location using geolocation API
+        function getCurrentLocation() {
+            if (!navigator.geolocation) {
+                showError('Geolocation is not supported by your browser');
+                return;
+            }
+            
+            // Show loading state
+            useLocationBtn.disabled = true;
+            useLocationBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            
+            navigator.geolocation.getCurrentPosition(
+                async (position) => {
+                    try {
+                        const { latitude, longitude } = position.coords;
+                        
+                        // Reverse geocoding to get location name
+                        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`);
+                        const data = await response.json();
+                        
+                        // Extract city/town name or fallback to coordinates
+                        let locationName = '';
+                        if (data.address) {
+                            locationName = data.address.city || 
+                                         data.address.town || 
+                                         data.address.village || 
+                                         data.address.county || 
+                                         data.address.state || 
+                                         'Current Location';
+                        } else {
+                            locationName = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+                        }
+                        
+                        // Update the location input
+                        const locationInput = document.getElementById('location');
+                        locationInput.value = locationName;
+                        
+                        // Store coordinates in a data attribute for later use
+                        locationInput.dataset.latitude = latitude;
+                        locationInput.dataset.longitude = longitude;
+                        
+                        // Show success message
+                        showError('Location found! Select a date and click "Get Weather Prediction"');
+                        
+                    } catch (error) {
+                        console.error('Error getting location:', error);
+                        showError('Could not determine your location. Please enter it manually.');
+                    } finally {
+                        // Reset button state
+                        useLocationBtn.disabled = false;
+                        useLocationBtn.innerHTML = '<i class="fas fa-location-arrow"></i><span class="desktop-text">My Location</span>';
+                    }
+                },
+                (error) => {
+                    console.error('Geolocation error:', error);
+                    let errorMessage = 'Could not get your location. ';
+                    switch(error.code) {
+                        case error.PERMISSION_DENIED:
+                            errorMessage += 'Please enable location access in your browser settings.';
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            errorMessage += 'Location information is unavailable.';
+                            break;
+                        case error.TIMEOUT:
+                            errorMessage += 'The request to get your location timed out.';
+                            break;
+                        default:
+                            errorMessage += 'Please enter your location manually.';
+                    }
+                    showError(errorMessage);
+                    // Reset button state
+                    useLocationBtn.disabled = false;
+                    useLocationBtn.innerHTML = '<i class="fas fa-location-arrow"></i><span class="desktop-text">My Location</span>';
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                }
+            );
+        }
             
             // Helper functions
             function showLoading(show) {
