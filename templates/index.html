@@ -208,6 +208,98 @@
             appearance: none;
         }
 
+        /* Location Input Container */
+        .location-input-container {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .input-with-icon {
+            position: relative;
+            flex: 1;
+        }
+
+        .input-with-icon i {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .input-with-icon .form-control {
+            padding-left: 36px;
+            width: 100%;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .input-with-icon .form-control:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+
+        .btn-location {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 0 16px;
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            color: var(--primary);
+            border-radius: 6px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            height: 44px;
+        }
+
+        .btn-location:hover {
+            background: rgba(99, 102, 241, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .btn-location i {
+            font-size: 0.9em;
+        }
+
+        .popular-locations {
+            margin-top: 12px;
+        }
+
+        .popular-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        .location-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .location-chip {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 4px 12px;
+            font-size: 0.8rem;
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .location-chip:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-1px);
+        }
+
         .form-control:focus {
             outline: none;
             border-color: var(--primary);
@@ -589,15 +681,20 @@
                 <form id="weatherForm">
                     <div class="form-group">
                         <label for="location" class="form-label">Location</label>
-                        <div class="location-input-container" style="display: flex; gap: 10px;">
-                            <input type="text" id="location" class="form-control" placeholder="Enter city or town in Ghana" required style="flex: 1;">
-                            <button type="button" id="useLocationBtn" class="btn btn-outline" style="white-space: nowrap; display: flex; align-items: center; gap: 5px; background: rgba(255, 255, 255, 0.1); border: 1px solid var(--glass-border);">
+                        <div class="location-input-container">
+                            <div class="input-with-icon">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="location" class="form-control" placeholder="Enter city or town in Ghana" required>
+                            </div>
+                            <button type="button" id="useLocationBtn" class="btn-location">
                                 <i class="fas fa-location-arrow"></i>
-                                <span class="desktop-text">My Location</span>
+                                <span>My Location</span>
                             </button>
                         </div>
-                        <div class="popular-locations" style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px;">
-                            <button type="button" class="location-chip" data-location="Accra">Accra</button>
+                        <div class="popular-locations">
+                            <p class="popular-label">Popular locations:</p>
+                            <div class="location-chips">
+                                <button type="button" class="location-chip" data-location="Accra">Accra</button>
                             <button type="button" class="location-chip" data-location="Kumasi">Kumasi</button>
                             <button type="button" class="location-chip" data-location="Tamale">Tamale</button>
                             <button type="button" class="location-chip" data-location="Sekondi-Takoradi">Sekondi-Takoradi</button>
@@ -730,6 +827,11 @@
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
         document.getElementById('date').valueAsDate = tomorrow;
+            
+            // Show welcome message
+            setTimeout(() => {
+                showNotification('Welcome to Skycast!', 'info');
+            }, 500);
             
             // Handle form submission
             weatherForm.addEventListener('submit', async function(e) {
@@ -883,98 +985,135 @@
                 delete locationInput.dataset.longitude;
                 
                 // Show success message
-                showError(`Selected ${location}. Now choose a date and click "Get Weather Prediction"`);
+                showNotification(`Selected ${location}. Now choose a date and click "Get Weather Prediction"`, 'success');
                 
                 // Focus the date field for better UX
                 document.getElementById('date').focus();
             });
         });
         
-        // Get location button click handler
-        const useLocationBtn = document.getElementById('useLocationBtn');
-        useLocationBtn.addEventListener('click', getCurrentLocation);
-        
         // Get current location using geolocation API
-        function getCurrentLocation() {
-            if (!navigator.geolocation) {
-                showError('Geolocation is not supported by your browser');
+        async function getCurrentLocation() {
+            const locationInput = document.getElementById('location');
+            const useLocationBtn = document.getElementById('useLocationBtn');
+            
+            if (!locationInput || !useLocationBtn) {
+                console.error('Required elements not found');
                 return;
             }
             
             // Show loading state
+            const originalBtnHTML = useLocationBtn.innerHTML;
             useLocationBtn.disabled = true;
-            useLocationBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            useLocationBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Locating...';
             
-            navigator.geolocation.getCurrentPosition(
-                async (position) => {
-                    try {
-                        const { latitude, longitude } = position.coords;
-                        
-                        // Reverse geocoding to get location name
-                        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`);
-                        const data = await response.json();
-                        
-                        // Extract city/town name or fallback to coordinates
-                        let locationName = '';
-                        if (data.address) {
-                            locationName = data.address.city || 
-                                         data.address.town || 
-                                         data.address.village || 
-                                         data.address.county || 
-                                         data.address.state || 
-                                         'Current Location';
-                        } else {
-                            locationName = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
-                        }
-                        
-                        // Update the location input
-                        const locationInput = document.getElementById('location');
-                        locationInput.value = locationName;
-                        
-                        // Store coordinates in a data attribute for later use
-                        locationInput.dataset.latitude = latitude;
-                        locationInput.dataset.longitude = longitude;
-                        
-                        // Show success message
-                        showError('Location found! Select a date and click "Get Weather Prediction"');
-                        
-                    } catch (error) {
-                        console.error('Error getting location:', error);
-                        showError('Could not determine your location. Please enter it manually.');
-                    } finally {
-                        // Reset button state
-                        useLocationBtn.disabled = false;
-                        useLocationBtn.innerHTML = '<i class="fas fa-location-arrow"></i><span class="desktop-text">My Location</span>';
-                    }
-                },
-                (error) => {
-                    console.error('Geolocation error:', error);
-                    let errorMessage = 'Could not get your location. ';
-                    switch(error.code) {
-                        case error.PERMISSION_DENIED:
-                            errorMessage += 'Please enable location access in your browser settings.';
-                            break;
-                        case error.POSITION_UNAVAILABLE:
-                            errorMessage += 'Location information is unavailable.';
-                            break;
-                        case error.TIMEOUT:
-                            errorMessage += 'The request to get your location timed out.';
-                            break;
-                        default:
-                            errorMessage += 'Please enter your location manually.';
-                    }
-                    showError(errorMessage);
-                    // Reset button state
-                    useLocationBtn.disabled = false;
-                    useLocationBtn.innerHTML = '<i class="fas fa-location-arrow"></i><span class="desktop-text">My Location</span>';
-                },
-                {
-                    enableHighAccuracy: true,
-                    timeout: 10000,
-                    maximumAge: 0
+            // Show initial notification
+            showNotification('Requesting location access...', 'info');
+            
+            if (!navigator.geolocation) {
+                showNotification('Geolocation is not supported by your browser', 'error');
+                useLocationBtn.disabled = false;
+                useLocationBtn.innerHTML = originalBtnHTML;
+                return;
+            }
+            
+            try {
+                const position = await new Promise((resolve, reject) => {
+                    navigator.geolocation.getCurrentPosition(resolve, reject, {
+                        enableHighAccuracy: true,
+                        timeout: 10000,
+                        maximumAge: 60000
+                    });
+                });
+                
+                const { latitude, longitude } = position.coords;
+                
+                // Show loading message
+                showNotification('Finding your location...', 'info');
+                
+                // Use OpenStreetMap's Nominatim for reverse geocoding
+                const response = await fetch(
+                    `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`
+                );
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch location data');
                 }
-            );
+                
+                const data = await response.json();
+                
+                let locationName = '';
+                if (data.address) {
+                    // Try to get the most specific location name available
+                    locationName = data.address.city || 
+                                 data.address.town || 
+                                 data.address.village || 
+                                 data.address.county || 
+                                 data.address.state || 
+                                 data.address.region ||
+                                 data.address.hamlet ||
+                                 data.address.suburb ||
+                                 'Nearby Location';
+                    
+                    // If we have a more specific name in display_name, use that
+                    if (data.display_name) {
+                        const parts = data.display_name.split(',');
+                        if (parts.length > 0) {
+                            locationName = parts[0].trim();
+                        }
+                    }
+                } else {
+                    locationName = `Location (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`;
+                }
+                
+                // Update the location input
+                locationInput.value = locationName;
+                
+                // Store coordinates in a hidden field for later use
+                let coordsInput = document.getElementById('coordinates');
+                if (!coordsInput) {
+                    coordsInput = document.createElement('input');
+                    coordsInput.type = 'hidden';
+                    coordsInput.id = 'coordinates';
+                    coordsInput.name = 'coordinates';
+                    document.getElementById('weatherForm').appendChild(coordsInput);
+                }
+                coordsInput.value = `${latitude},${longitude}`;
+                
+                // Show success message
+                showNotification(`Location set to: ${locationName}`, 'success');
+                
+            } catch (error) {
+                console.error('Error getting location:', error);
+                let errorMessage = 'Unable to retrieve your location';
+                
+                if (error.code === 1) { // PERMISSION_DENIED
+                    errorMessage = 'Location access was denied. Please enable location permissions in your browser settings and try again.';
+                } else if (error.code === 2) { // POSITION_UNAVAILABLE
+                    errorMessage = 'Location information is currently unavailable. Please check your connection and try again.';
+                } else if (error.code === 3) { // TIMEOUT
+                    errorMessage = 'The request to get your location timed out. Please try again in a moment.';
+                } else if (error.message.includes('Failed to fetch')) {
+                    errorMessage = 'Unable to determine your location. Please check your internet connection.';
+                } else if (error.message.includes('User denied Geolocation')) {
+                    errorMessage = 'Location access was denied. Please allow location access to use this feature.';
+                }
+                
+                showNotification(errorMessage, 'error');
+            } finally {
+                // Reset button state
+                if (useLocationBtn) {
+                    useLocationBtn.disabled = false;
+                    useLocationBtn.innerHTML = '<i class="fas fa-location-arrow"></i> My Location';
+                }
+            }
         }
+        
+        // Initialize location button
+        const useLocationBtn = document.getElementById('useLocationBtn');
+        if (useLocationBtn) {
+            useLocationBtn.addEventListener('click', getCurrentLocation);
+        }          
             
             // Helper functions
             function showLoading(show) {
@@ -985,49 +1124,168 @@
                 }
             }
             
-            function showError(message) {
-                // Create error toast if not exists
-                let errorToast = document.getElementById('error-toast');
-                if (!errorToast) {
-                    errorToast = document.createElement('div');
-                    errorToast.id = 'error-toast';
-                    errorToast.className = 'error-toast';
-                    document.body.appendChild(errorToast);
+            function showNotification(message, type = 'info', duration = 5000) {
+                // Create notification container if not exists
+                let notificationContainer = document.getElementById('notification-container');
+                if (!notificationContainer) {
+                    notificationContainer = document.createElement('div');
+                    notificationContainer.id = 'notification-container';
+                    notificationContainer.className = 'notification-container';
+                    document.body.appendChild(notificationContainer);
                     
-                    // Add styles for the toast
+                    // Add styles for notifications
                     const style = document.createElement('style');
                     style.textContent = `
-                        .error-toast {
+                        .notification-container {
                             position: fixed;
-                            bottom: 20px;
-                            left: 50%;
-                            transform: translateX(-50%);
-                            background-color: var(--danger);
-                            color: white;
-                            padding: 12px 24px;
-                            border-radius: 4px;
-                            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-                            z-index: 1000;
-                            opacity: 0;
-                            transition: opacity 0.3s ease-in-out;
-                            max-width: 90%;
-                            text-align: center;
+                            top: 20px;
+                            right: 20px;
+                            z-index: 9999;
+                            display: flex;
+                            flex-direction: column;
+                            gap: 12px;
+                            max-width: 350px;
+                            width: 100%;
+                            pointer-events: none;
                         }
-                        .error-toast.show {
+                        
+                        .notification {
+                            position: relative;
+                            padding: 16px 20px;
+                            border-radius: 12px;
+                            color: #fff;
+                            font-size: 0.95rem;
+                            line-height: 1.5;
+                            opacity: 0;
+                            transform: translateX(100%);
+                            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+                            backdrop-filter: blur(12px) saturate(180%);
+                            -webkit-backdrop-filter: blur(12px) saturate(180%);
+                            background-color: rgba(17, 24, 39, 0.75);
+                            border: 1px solid rgba(255, 255, 255, 0.08);
+                            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+                            overflow: hidden;
+                            pointer-events: auto;
+                            display: flex;
+                            align-items: flex-start;
+                            max-width: 320px;
+                            width: 100%;
+                        }
+                        
+                        .notification::before {
+                            content: '';
+                            position: absolute;
+                            top: 0;
+                            left: 0;
+                            right: 0;
+                            height: 3px;
+                            background: linear-gradient(90deg, var(--notification-color, #6366f1), rgba(255,255,255,0.4));
+                            opacity: 0.8;
+                        }
+                        
+                        .notification.show {
                             opacity: 1;
+                            transform: translateX(0);
+                        }
+                        
+                        .notification .icon {
+                            margin-right: 12px;
+                            font-size: 1.3rem;
+                            margin-top: 2px;
+                            color: var(--notification-color, #6366f1);
+                        }
+                        
+                        .progress-bar {
+                            position: absolute;
+                            bottom: 0;
+                            left: 0;
+                            height: 3px;
+                            background: rgba(255, 255, 255, 0.5);
+                            width: 100%;
+                            transform-origin: left;
+                        }
+                        
+                        @keyframes progress {
+                            0% { transform: scaleX(1); }
+                            100% { transform: scaleX(0); }
                         }
                     `;
                     document.head.appendChild(style);
                 }
                 
-                // Show error message
-                errorToast.textContent = message;
-                errorToast.classList.add('show');
+                // Create notification element
+                const notification = document.createElement('div');
+                notification.className = `notification ${type}`;
                 
-                // Hide after 5 seconds
-                setTimeout(() => {
-                    errorToast.classList.remove('show');
-                }, 5000);
+                // Add icon based on type
+                const iconMap = {
+                    error: 'exclamation-circle',
+                    success: 'check-circle',
+                    warning: 'exclamation-triangle',
+                    info: 'info-circle'
+                };
+                
+                const icon = document.createElement('i');
+                icon.className = `fas fa-${iconMap[type] || 'info-circle'} icon`;
+                
+                // Add content
+                const content = document.createElement('div');
+                content.className = 'content';
+                
+                const title = document.createElement('div');
+                title.className = 'title';
+                title.textContent = type.charAt(0).toUpperCase() + type.slice(1);
+                
+                const messageEl = document.createElement('div');
+                messageEl.className = 'message';
+                messageEl.textContent = message;
+                
+                content.appendChild(title);
+                content.appendChild(messageEl);
+                
+                // Add close button
+                const closeBtn = document.createElement('button');
+                closeBtn.className = 'close-btn';
+                closeBtn.innerHTML = '&times;';
+                closeBtn.setAttribute('aria-label', 'Close notification');
+                
+                // Add progress bar
+                const progress = document.createElement('div');
+                progress.className = 'progress-bar';
+                progress.style.animation = `progress ${duration}ms linear forwards`;
+                
+                // Assemble notification
+                notification.appendChild(icon);
+                notification.appendChild(content);
+                notification.appendChild(closeBtn);
+                notification.appendChild(progress);
+                notificationContainer.appendChild(notification);
+                
+                // Trigger show animation
+                setTimeout(() => notification.classList.add('show'), 10);
+                
+                // Close handler
+                const closeNotification = () => {
+                    notification.classList.remove('show');
+                    setTimeout(() => notification.remove(), 300);
+                };
+                
+                // Add close event
+                closeBtn.onclick = closeNotification;
+                
+                // Auto-remove after delay if duration is not 0
+                if (duration > 0) {
+                    setTimeout(closeNotification, duration);
+                }
+                
+                return {
+                    close: closeNotification
+                };
+            }
+            
+            // Keep showError for backward compatibility
+            function showError(message) {
+                return showNotification(message, 'error');
             }
             
             function showModal() {
