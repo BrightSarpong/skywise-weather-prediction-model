@@ -6,7 +6,7 @@ A simple web application that uses a trained machine learning model to predict w
 
 - **Location Input**: Enter any city, state, or country name
 - **Geocoding**: Automatically converts location names to coordinates
-- **Weather Prediction**: Uses your trained joblib model to predict weather conditions
+- **Weather Prediction**: Uses a trained joblib model to predict weather conditions
 - **Modern UI**: Clean, responsive design with real-time feedback
 - **Error Handling**: Comprehensive error handling for invalid locations and server issues
 
@@ -17,7 +17,7 @@ My weather/
 ├── app.py                           # Flask backend application
 ├── templates/
 │   └── index.html                   # Frontend HTML template
-├── combined_weather_models_geo.joblib # Your trained ML model
+├── combined_weather_models_geo.joblib # The trained ML model
 ├── requirements.txt                 # Python dependencies
 └── README.md                       # This file
 ```
