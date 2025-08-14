@@ -23,9 +23,11 @@ def load_model_with_compatibility():
     import warnings
     import pickle
     import os
+    import sys
     
     warnings.filterwarnings('ignore', category=UserWarning)
     warnings.filterwarnings('ignore', category=FutureWarning)
+    warnings.filterwarnings('ignore', category=DeprecationWarning)
     
     model_file = 'combined_weather_models_geo.joblib'
     
@@ -33,24 +35,84 @@ def load_model_with_compatibility():
         logger.error(f"Model file {model_file} not found!")
         return None
     
+    def log_environment_info():
+        """Log environment information for debugging"""
+        import platform
+        import sklearn
+        import joblib as jl
+        
+        logger.info("Environment Information:")
+        logger.info(f"Python: {sys.version}")
+        logger.info(f"Platform: {platform.platform()}")
+        logger.info(f"scikit-learn: {sklearn.__version__}")
+        logger.info(f"joblib: {jl.__version__}")
+        logger.info(f"numpy: {np.__version__}")
+        logger.info(f"pandas: {pd.__version__ if 'pd' in globals() else 'N/A'}")
+    
+    # Log environment info for debugging
+    log_environment_info()
+    
     # Try multiple loading strategies
     loading_strategies = [
-        ("joblib.load", lambda: joblib.load(model_file)),
-        ("pickle.load", lambda: pickle.load(open(model_file, 'rb'))),
-        ("joblib with mmap_mode", lambda: joblib.load(model_file, mmap_mode='r')),
+        ("joblib.load with latest", 
+         lambda: joblib.load(model_file)),
+         
+        ("joblib.load with mmap_mode='r'", 
+         lambda: joblib.load(model_file, mmap_mode='r')),
+         
+        ("joblib.load with mmap_mode=None", 
+         lambda: joblib.load(model_file, mmap_mode=None)),
     ]
     
+    # Try loading with different encodings if needed
+    try:
+        import codecs
+        loading_strategies.extend([
+            (f"joblib.load with latin1 encoding", 
+             lambda: joblib.load(model_file, encoding='latin1')),
+                
+            (f"joblib.load with bytes encoding", 
+             lambda: joblib.load(model_file, encoding='bytes')),
+        ])
+    except Exception as e:
+        logger.warning(f"Could not add encoding-based loading strategies: {e}")
+    
+    # Try each loading strategy
     for strategy_name, load_func in loading_strategies:
         try:
             logger.info(f"Trying to load model using {strategy_name}...")
             model_data = load_func()
-            logger.info(f"✓ Model loaded successfully using {strategy_name}. Type: {type(model_data)}")
-            return model_data
+            
+            # Verify the loaded model has the expected structure
+            if model_data and isinstance(model_data, dict):
+                logger.info(f"✓ Model loaded successfully using {strategy_name}")
+                logger.info(f"Model contains predictions for: {list(model_data.keys())}")
+                return model_data
+            else:
+                logger.warning(f"Model loaded but unexpected format: {type(model_data)}")
+                
         except Exception as e:
-            logger.warning(f"✗ {strategy_name} failed: {e}")
+            logger.warning(f"✗ {strategy_name} failed: {str(e)}")
             continue
     
+    # If all strategies failed, try a more robust approach
+    try:
+        logger.info("Trying fallback loading with error handling...")
+        with open(model_file, 'rb') as f:
+            model_data = joblib.load(f)
+            if model_data:
+                logger.info("✓ Model loaded successfully using fallback method")
+                return model_data
+    except Exception as e:
+        logger.error(f"Fallback loading failed: {e}")
+    
     logger.error("All model loading strategies failed!")
+    logger.info("\nTroubleshooting tips:")
+    logger.info("1. Check if all required packages are installed with correct versions")
+    logger.info("2. The model might have been saved with a different version of scikit-learn")
+    logger.info("3. Try recreating the model with the current environment")
+    logger.info("4. Check if the model file is not corrupted")
+    
     return None
 
 # Enhanced weather model with improved accuracy using real weather patterns
@@ -701,18 +763,30 @@ def index():
 def predict_weather():
     """Predict weather for a given location and date range"""
     try:
+        # Log incoming request data for debugging
+        logger.info(f"Received prediction request. Form data: {request.form}")
+        
         # Get location and prediction date from form
         location = request.form.get('location')
         prediction_date = request.form.get('predictionDate')
         
         if not location:
+            logger.warning("No location provided in request")
             return jsonify({'error': 'Please provide a Ghana city'}), 400
             
         if not prediction_date:
+            logger.warning("No prediction date provided in request")
             return jsonify({'error': 'Please provide a prediction date'}), 400
+            
+        logger.info(f"Processing prediction for location: {location}, date: {prediction_date}")
         
-        if model is None:
-            return jsonify({'error': 'Model not loaded properly'}), 500
+        # Check if we have a valid model or fallback
+        if model is None and not hasattr(EnhancedWeatherModel, 'predict'):
+            logger.error("No prediction model available - both primary and fallback models failed to load")
+            return jsonify({
+                'error': 'Weather prediction service is temporarily unavailable',
+                'details': 'Please try again later or contact support'
+            }), 503
         
         # Get coordinates for the location
         location_lower = location.lower().strip()
